@@ -33,6 +33,7 @@ const char *note_names[] = {
     "C5", "C#5", "D5", "D#5", "E5", "F5", "F#5", "G5", "G#5", "A5", "A#5", "B5"
 };
 const int notes_per_octave = 12;
+const int whole_note_indices[] = {0, 2, 4, 5, 7, 9, 11}; // C, D, E, F, G, A, B
 
 #ifdef __APPLE__
 static float phase = 0.0f;
@@ -120,40 +121,102 @@ int main() {
 #endif
 
     srand(time(NULL));
-    int start_octave, end_octave, duration, rounds;
+    int start_octave, end_octave, duration, rounds, include_sharps, mode;
+    int note_indices[36]; // Max size for 3 octaves
+    int num_notes;
 
-    printf("Select start octave (3-5): ");
-    scanf("%d", &start_octave);
-    if (start_octave < 3 || start_octave > 5) {
-        printf("Invalid octave. Defaulting to 3.\n");
-        start_octave = 3;
-    }
-    printf("Select end octave (%d-5): ", start_octave);
-    scanf("%d", &end_octave);
-    if (end_octave < start_octave || end_octave > 5) {
-        printf("Invalid octave. Defaulting to %d.\n", start_octave);
-        end_octave = start_octave;
-    }
-    printf("Note duration (1-5 seconds): ");
-    scanf("%d", &duration);
-    if (duration < 1 || duration > 5) {
-        printf("Invalid duration. Defaulting to 2 seconds.\n");
+    // Opening menu
+    printf("Note Guessing Game\n");
+    printf("1. Default (whole notes, octave 4, 2s duration, 5 rounds)\n");
+    printf("2. Harder (all notes, octave 4, 2s duration, 5 rounds)\n");
+    printf("3. Custom (choose octaves, duration, rounds, include sharps)\n");
+    printf("Select mode (1-3): ");
+    scanf("%d", &mode);
+
+    if (mode == 1) {
+        // Default: whole notes, octave 4, 2s, 5 rounds
+        start_octave = 4;
+        end_octave = 4;
         duration = 2;
-    }
-    printf("Number of rounds (1-20): ");
-    scanf("%d", &rounds);
-    if (rounds < 1 || rounds > 20) {
-        printf("Invalid rounds. Defaulting to 5.\n");
         rounds = 5;
+        include_sharps = 0;
+        num_notes = 7;
+        for (int i = 0; i < num_notes; i++) {
+            note_indices[i] = (start_octave - 3) * notes_per_octave + whole_note_indices[i];
+        }
+    } else if (mode == 2) {
+        // Harder: all notes, octave 4, 2s, 5 rounds
+        start_octave = 4;
+        end_octave = 4;
+        duration = 2;
+        rounds = 5;
+        include_sharps = 1;
+        num_notes = notes_per_octave;
+        for (int i = 0; i < num_notes; i++) {
+            note_indices[i] = (start_octave - 3) * notes_per_octave + i;
+        }
+    } else if (mode == 3) {
+        // Custom
+        printf("Select start octave (3-5): ");
+        scanf("%d", &start_octave);
+        if (start_octave < 3 || start_octave > 5) {
+            printf("Invalid octave. Defaulting to 3.\n");
+            start_octave = 3;
+        }
+        printf("Select end octave (%d-5): ", start_octave);
+        scanf("%d", &end_octave);
+        if (end_octave < start_octave || end_octave > 5) {
+            printf("Invalid octave. Defaulting to %d.\n", start_octave);
+            end_octave = start_octave;
+        }
+        printf("Note duration (1-5 seconds): ");
+        scanf("%d", &duration);
+        if (duration < 1 || duration > 5) {
+            printf("Invalid duration. Defaulting to 2 seconds.\n");
+            duration = 2;
+        }
+        printf("Number of rounds (1-20): ");
+        scanf("%d", &rounds);
+        if (rounds < 1 || rounds > 20) {
+            printf("Invalid rounds. Defaulting to 5.\n");
+            rounds = 5;
+        }
+        printf("Include sharps/flats? (0 = whole notes only, 1 = include sharps): ");
+        scanf("%d", &include_sharps);
+        if (include_sharps != 0 && include_sharps != 1) {
+            printf("Invalid choice. Defaulting to whole notes only.\n");
+            include_sharps = 0;
+        }
+
+        if (include_sharps) {
+            num_notes = (end_octave - start_octave + 1) * notes_per_octave;
+            for (int i = 0; i < num_notes; i++) {
+                note_indices[i] = (start_octave - 3) * notes_per_octave + i;
+            }
+        } else {
+            num_notes = (end_octave - start_octave + 1) * 7;
+            for (int i = 0; i < end_octave - start_octave + 1; i++) {
+                for (int j = 0; j < 7; j++) {
+                    note_indices[i * 7 + j] = (start_octave - 3 + i) * notes_per_octave + whole_note_indices[j];
+                }
+            }
+        }
+    } else {
+        printf("Invalid mode. Defaulting to mode 1.\n");
+        start_octave = 4;
+        end_octave = 4;
+        duration = 2;
+        rounds = 5;
+        include_sharps = 0;
+        num_notes = 7;
+        for (int i = 0; i < num_notes; i++) {
+            note_indices[i] = (start_octave - 3) * notes_per_octave + whole_note_indices[i];
+        }
     }
 
-    int start_idx = (start_octave - 3) * notes_per_octave;
-    int end_idx = (end_octave - 3) * notes_per_octave + notes_per_octave - 1;
-    int num_notes = end_idx - start_idx + 1;
     int score = 0;
-
     for (int i = 0; i < rounds; i++) {
-        int random_idx = start_idx + (rand() % num_notes);
+        int random_idx = note_indices[rand() % num_notes];
         double selected_freq = frequencies[random_idx];
         const char *correct_note = note_names[random_idx];
 

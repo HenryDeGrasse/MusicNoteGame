@@ -25,6 +25,28 @@ Execute:./note_game
 
 
 
+Usage
+
+Opening Menu:
+
+1. Default: Whole notes only (C, D, E, F, G, A, B) in octave 4, 2-second duration, 5 rounds.
+2. Harder: All notes (including sharps/flats) in octave 4, 2-second duration, 5 rounds.
+3. Custom: Choose start/end octaves (3–5), duration (1–5 seconds), rounds (1–20), and whether to include sharps/flats (0 = whole notes only, 1 = include sharps).
+
+
+Gameplay:
+
+Listen to a note and guess its name.
+Input Format: Enter notes as C4, C#4, D4, etc. (case-sensitive, e.g., C4 not c4).
+Whole notes: C, D, E, F, G, A, B followed by octave number (e.g., C4).
+Sharps: Use # (e.g., C#4 for C-sharp in octave 4).
+
+
+After each round, see if your guess was correct.
+At the end, view your score (correct guesses / total rounds).
+
+
+
 Troubleshooting
 
 Linux: ALSA errors:Ensure libasound2-dev (Ubuntu/Debian) or alsa-lib-devel (Fedora) is installed.Check ALSA device availability:
@@ -36,14 +58,6 @@ macOS: No sound:Ensure system audio output is set correctly (System Settings > S
 xcode-select --install
 
 
-
-Usage
-
-Select start and end octaves (3–5).
-Choose note duration (1–5 seconds).
-Specify number of rounds (1–20).
-Listen to each note and guess its name (e.g., C4, C#4).
-View your score at the end.
 
 Notes
 
