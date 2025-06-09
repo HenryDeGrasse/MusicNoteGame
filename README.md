@@ -4,7 +4,7 @@ Prerequisites
 
 C Compiler: GCC or Clang (available on macOS and Linux).
 macOS: CoreAudio (included with macOS).
-Linux: ALSA library (libasound2-dev on Ubuntu/Debian, alsa-lib-devel on Fedora).
+Linux: ALSA library (alsa-lib on Artix/Arch, libasound2-dev on Ubuntu/Debian, alsa-lib-devel on Fedora).
 
 Installation
 
@@ -37,7 +37,7 @@ Opening Menu:
 
 Gameplay:
 
-Listen to a note and guess its name. You can type your guess while the note plays.
+Listen to a note and guess its name.
 Input Format: Enter notes as C4, C#4, D4, etc. (case-sensitive, e.g., C4 not c4).
 Whole notes: C, D, E, F, G, A, B followed by octave number (e.g., C4).
 Sharps: Use # (e.g., C#4 for C-sharp in octave 4).
@@ -56,7 +56,7 @@ aplay -l
 Check for pulseaudio or pipewire conflicts (common on Artix). Restart ALSA:
 sudo alsa force-reload  # Artix/Arch
 
-Ensure speakers are connected and not muted.
+Ensure speakers are connected and not muted. If noise persists, try a different ALSA device (e.g., hw:0,0 instead of default in code).
 
 Linux: ALSA errors:Ensure alsa-lib (Artix/Arch) or libasound2-dev (Ubuntu/Debian) or alsa-lib-devel (Fedora) is installed.Verify ALSA device availability:
 aplay -l
@@ -70,7 +70,6 @@ xcode-select --install
 Notes
 
 Uses CoreAudio (macOS) or ALSA (Linux) for audio, both GNU-compliant.
-Input can be entered during note playback for faster guessing.
 Ensure speakers are on and volume is adjusted.
 Not supported on Windows.
 

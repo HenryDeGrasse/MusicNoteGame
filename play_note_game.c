@@ -4,8 +4,6 @@
 #include <math.h>
 #include <time.h>
 #include <unistd.h>
-#include <termios.h>
-#include <sys/select.h>
 
 #ifdef __APPLE__
 #include <AudioUnit/AudioUnit.h>
@@ -53,7 +51,7 @@ OSStatus audio_callback(void *inRefCon, AudioUnitRenderActionFlags *ioActionFlag
     return noErr;
 }
 
-void play_note(double frequency, int duration, char *user_guess, int max_guess_len) {
+void play_note(double frequency, int duration) {
     AudioComponentDescription desc = {kAudioUnitType_Output, kAudioUnitSubType_DefaultOutput, kAudioUnitManufacturer_Apple, 0, 0};
     AudioComponent comp = AudioComponentFindNext(NULL, &desc);
     AudioUnit au;
@@ -78,40 +76,15 @@ void play_note(double frequency, int duration, char *user_guess, int max_guess_l
 
     AudioUnitInitialize(au);
     AudioOutputUnitStart(au);
-
-    // Non-blocking input
-    struct termios oldt, newt;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-
-    fd_set set;
-    struct timeval timeout;
-    int seconds_left = duration;
-    user_guess[0] = '\0';
-    while (seconds_left > 0) {
-        FD_ZERO(&set);
-        FD_SET(STDIN_FILENO, &set);
-        timeout.tv_sec = 1;
-        timeout.tv_usec = 0;
-        if (select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout) > 0) {
-            fgets(user_guess, max_guess_len, stdin);
-            user_guess[strcspn(user_guess, "\n")] = '\0';
-            break;
-        }
-        seconds_left--;
-    }
-
+    sleep(duration);
     AudioOutputUnitStop(au);
     AudioUnitUninitialize(au);
     AudioComponentInstanceDispose(au);
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 }
 #endif
 
 #ifdef __linux__
-void play_note(double frequency, int duration, char *user_guess, int max_guess_len) {
+void play_note(double frequency, int duration) {
     snd_pcm_t *pcm;
     int err = snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0);
     if (err < 0) {
@@ -120,13 +93,12 @@ void play_note(double frequency, int duration, char *user_guess, int max_guess_l
     }
 
     snd_pcm_hw_params_t *params;
-    snd_pcm_hw_params_alloca(¶ms);
+    snd_pcm_hw_params_alloca(&params);
     snd_pcm_hw_params_any(pcm, params);
     snd_pcm_hw_params_set_access(pcm, params, SND_PCM_ACCESS_RW_INTERLEAVED);
     snd_pcm_hw_params_set_format(pcm, params, SND_PCM_FORMAT_FLOAT);
     snd_pcm_hw_params_set_channels(pcm, params, 1);
     snd_pcm_hw_params_set_rate(pcm, params, SAMPLE_RATE, 0);
-    snd_pcm_hw_params_set_buffer_size(pcm, params, SAMPLE_RATE * 2); // Larger buffer
     if ((err = snd_pcm_hw_params(pcm, params)) < 0) {
         fprintf(stderr, "ALSA params error: %s\n", snd_strerror(err));
         snd_pcm_close(pcm);
@@ -141,37 +113,15 @@ void play_note(double frequency, int duration, char *user_guess, int max_guess_l
         phase = fmodf(phase + radians_per_sample, 2.0f * PI);
     }
 
-    // Non-blocking input
-    struct termios oldt, newt;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-
-    fd_set set;
-    struct timeval timeout;
-    int seconds_left = duration;
-    user_guess[0] = '\0';
-    while (seconds_left > 0) {
+    for (int i = 0; i < duration; i++) {
         if ((err = snd_pcm_writei(pcm, buffer, SAMPLE_RATE)) < 0) {
-            snd_pcm_recover(pcm, err, 1);
+            fprintf(stderr, "ALSA write error: %s\n", snd_strerror(err));
         }
-        FD_ZERO(&set);
-        FD_SET(STDIN_FILENO, &set);
-        timeout.tv_sec = 1;
-        timeout.tv_usec = 0;
-        if (select(STDIN_FILENO + 1, &set, NULL, NULL, &timeout) > 0) {
-            fgets(user_guess, max_guess_len, stdin);
-            user_guess[strcspn(user_guess, "\n")] = '\0';
-            break;
-        }
-        seconds_left--;
     }
 
     free(buffer);
     snd_pcm_drop(pcm);
     snd_pcm_close(pcm);
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
 }
 #endif
 
@@ -285,14 +235,12 @@ int main() {
         const char *correct_note = note_names[random_idx];
 
         printf("\nRound %d: Listen and guess the note (e.g., C4, C#4):\n", i + 1);
-        char user_guess[10];
-        play_note(selected_freq, duration, user_guess, sizeof(user_guess));
+        play_note(selected_freq, duration);
 
-        if (user_guess[0] == '\0') {
-            printf("Your guess: ");
-            fgets(user_guess, sizeof(user_guess), stdin);
-            user_guess[strcspn(user_guess, "\n")] = '\0';
-        }
+        char user_guess[10];
+        printf("Your guess: ");
+        fgets(user_guess, sizeof(user_guess), stdin);
+        user_guess[strcspn(user_guess, "\n")] = '\0';
 
         if (strcmp(user_guess, correct_note) == 0) {
             printf("Correct! The note was %s.\n", correct_note);
