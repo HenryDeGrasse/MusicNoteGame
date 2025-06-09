@@ -9,7 +9,7 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
     LDFLAGS = -framework AudioUnit
 else ifeq ($(UNAME_S),Linux)
-    LDFLAGS = -lasound
+    LDFLAGS = -lasound -lm
 endif
 
 all: $(TARGET)
