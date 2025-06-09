@@ -138,7 +138,7 @@ int main() {
 
     // Opening menu
     printf("Note Guessing Game\n");
-    printf("1. Default (whole notes, octave 4, 2s duration, 5 rounds)\n");
+    printf("1. Default (whole notes, octave 4, 3s duration, 5 rounds)\n");
     printf("2. Harder (all notes, octave 4, 2s duration, 5 rounds)\n");
     printf("3. Custom (choose octaves, duration, rounds, include sharps)\n");
     printf("Select mode (1-3): ");
@@ -148,7 +148,7 @@ int main() {
     if (mode == 1) {
         start_octave = 4;
         end_octave = 4;
-        duration = 2;
+        duration = 3;
         rounds = 5;
         include_sharps = 0;
         num_notes = 7;
@@ -253,3 +253,4 @@ int main() {
     printf("\nGame Over! Score: %d/%d (%.2f%%)\n", score, rounds, (float)score / rounds * 100);
     return 0;
 }
+
